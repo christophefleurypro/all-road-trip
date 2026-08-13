@@ -1,24 +1,23 @@
-# Déploiement automatique :
+# Déploiement automatique, déclenché uniquement par les push :
 #
-#   push sur main
+#   push sur main (direct, ou merge d'une PR)
 #     → GitHub Actions construit le site (vite build) et pousse le contenu
 #       de dist/ — prêt à servir — sur la branche `deploy`
-#     → sur le serveur (o2switch), un cron tire la branche toutes les
-#       2 minutes : ~/bin/deploy-roadtrip.sh fait git fetch + reset --hard
-#       s'il y a du nouveau. Le site est donc à jour au plus 2 min après
-#       la fin du build.
+#     → puis appelle le webhook https://christophefleury.fr/deploy-roadtrip.php
+#       (jeton du secret DEPLOY_TOKEN, envoyé en en-tête X-Deploy-Token) ;
+#       ce PHP fait le git pull (fetch + reset) du clone du serveur.
+#       En dehors des push, rien ne tourne nulle part.
 #
-# Pourquoi un cron côté serveur plutôt qu'un SSH depuis Actions : le
-# pare-feu o2switch bloque le SSH venant des IP non françaises, dont les
-# runners GitHub (connection timed out systématique).
+# Pourquoi un webhook plutôt qu'un SSH depuis Actions : le pare-feu
+# o2switch bloque le SSH venant des IP non françaises, dont les runners
+# GitHub. Le HTTPS vers le site, lui, passe normalement.
 #
 # Le serveur n'a besoin que de git : ni Node, ni npm, ni build sur place.
-# Aucun secret n'est nécessaire.
 #
 # Mise en place côté serveur (une seule fois, déjà faite) :
 #   git clone --branch deploy --single-branch \
 #     https://github.com/christophefleurypro/all-road-trip.git ~/christophefleury.fr/roadtrip
-#   + le script ~/bin/deploy-roadtrip.sh appelé par la crontab (*/2)
+#   + le fichier ~/christophefleury.fr/deploy-roadtrip.php (webhook)
 
 name: Build & déploiement
 
@@ -66,3 +65,11 @@ jobs:
           git push --force \
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
             deploy
+
+      # -f : un retour non-2xx du webhook (jeton refusé, git en échec) fait
+      # échouer le run, pour que le problème soit visible dans l'onglet Actions
+      - name: Prévenir le serveur (déclenche son git pull)
+        run: |
+          curl -fsS --retry 3 --retry-delay 5 \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}" \
+            https://christophefleury.fr/deploy-roadtrip.php
