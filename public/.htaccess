@@ -1,0 +1,2 @@
+# Le site est déployé par clone git : le dossier .git ne doit pas être servi
+RedirectMatch 404 /\.git
