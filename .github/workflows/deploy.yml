@@ -71,11 +71,11 @@ jobs:
       # restaurera l'appel réel.
       - name: Prévenir le serveur (déclenche son git pull)
         run: |
-          t() { printf "%-52s" "$1"; shift; curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "$@" || echo "ECHEC RESEAU"; }
-          t "1. / via Cloudflare"            https://christophefleury.fr/
-          t "2. /roadtrip/ via Cloudflare"   https://christophefleury.fr/roadtrip/
-          t "3. webhook sans jeton via CF"   https://christophefleury.fr/deploy-roadtrip.php
-          t "4. / direct origine"            --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/
-          t "5. webhook sans jeton origine"  --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/deploy-roadtrip.php
-          echo "== certificat servi par l'origine =="
-          curl -sv --max-time 20 --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/ -o /dev/null 2>&1 | grep -iE "subject:|issuer:|SSL certificate" || true
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+          t() { printf "%-56s" "$1"; shift; curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "$@" || echo "ECHEC RESEAU"; }
+          t "1. webhook via CF, UA curl (rappel)"     https://christophefleury.fr/deploy-roadtrip.php
+          t "2. webhook via CF, UA navigateur"        -A "$UA" -H "Accept: text/html" -H "Accept-Language: fr" https://christophefleury.fr/deploy-roadtrip.php
+          t "3. PHP inexistant via CF, UA curl"       https://christophefleury.fr/fichier-inexistant.php
+          t "4. PHP inexistant via CF, UA navigateur" -A "$UA" https://christophefleury.fr/fichier-inexistant.php
+          t "5. webhook direct origine, UA navigateur" -A "$UA" --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/deploy-roadtrip.php
+          t "6. webhook via CF, UA navigateur, POST"  -A "$UA" -X POST https://christophefleury.fr/deploy-roadtrip.php
