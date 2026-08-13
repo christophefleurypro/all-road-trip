@@ -1,0 +1,83 @@
+# Déploiement automatique, en deux temps :
+#
+#   push sur main
+#     1. GitHub Actions construit le site (vite build) et pousse le contenu
+#        de dist/ — prêt à servir — sur la branche `deploy`
+#     2. puis se connecte au serveur en SSH et met à jour le clone
+#        (git fetch + reset, l'équivalent sûr d'un git pull sur une
+#        branche réécrite à chaque build)
+#
+# Le serveur n'a besoin que de git : ni Node, ni npm, ni build sur place.
+#
+# Secrets à créer sur GitHub (Settings → Secrets and variables → Actions) :
+#   SSH_HOST      hôte du serveur, ex. serveur.mon-hebergeur.fr
+#   SSH_USER      utilisateur SSH
+#   SSH_KEY       clé privée SSH (OpenSSH, la paire dédiée à ce déploiement)
+#   SSH_PORT     (facultatif) port SSH si différent de 22
+#   DEPLOY_PATH   chemin du clone sur le serveur, ex. /home/user/www
+#
+# Mise en place côté serveur (une seule fois) — voir aussi le récap en bas :
+#   git clone --branch deploy --single-branch \
+#     https://github.com/christophefleurypro/all-road-trip.git <DEPLOY_PATH>
+
+name: Build & déploiement
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # bouton "Run workflow" dans l'onglet Actions, pour relancer à la main
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: write # nécessaire pour pousser la branche deploy
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Construire le site
+        run: npm run build
+
+      # La branche deploy ne porte qu'un seul commit, réécrit à chaque build :
+      # pas d'historique de builds à faire grossir dans le dépôt.
+      - name: Publier dist/ sur la branche deploy
+        run: |
+          cd dist
+          git init -b deploy
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build de ${GITHUB_SHA:0:7}"
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            deploy
+
+      # fetch + reset --hard et non `git pull` : la branche étant réécrite
+      # (force push), un pull tenterait une fusion et échouerait.
+      - name: Mettre à jour le serveur (git pull du clone)
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              -p "${{ secrets.SSH_PORT || '22' }}" \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              "cd '${{ secrets.DEPLOY_PATH }}' && git fetch origin deploy && git reset --hard origin/deploy"

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road trip — Étapes</title>
+<link rel="stylesheet" href="assets/vendor/fancybox.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <a class="back" href="index.html">← Tous les road trips</a>
+
+  <h1 id="titre">Road trip</h1>
+  <p class="subtitle" id="sous-titre"></p>
+
+  <!-- Totaux du voyage -->
+  <div class="totals" id="totals" hidden>
+    <div class="tile">
+      <div class="label">Jours</div>
+      <div class="value" data-field="jours"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Étapes</div>
+      <div class="value" data-field="etapes"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Distance totale</div>
+      <div class="value"><span data-field="km"></span> <small>km</small></div>
+    </div>
+    <div class="tile">
+      <div class="label">Temps total</div>
+      <div class="value" data-field="temps"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Dénivelé + cumulé</div>
+      <div class="value"><span data-field="dplus"></span> <small>m</small></div>
+    </div>
+  </div>
+
+  <!-- Étapes, regroupées par journée -->
+  <div class="table-card" id="jours" hidden>
+    <div class="row row--head" aria-hidden="true">
+      <div class="cell">Étape</div>
+      <div class="cell">Carte</div>
+      <div class="cell">Km</div>
+      <div class="cell">Temps estimé</div>
+      <div class="cell">Difficulté</div>
+      <div class="cell">Dénivelé</div>
+      <div class="cell">Piste cyclable</div>
+      <div class="cell">Fiche</div>
+    </div>
+  </div>
+
+  <!-- Notes de parcours -->
+  <section class="notes" id="notes" hidden>
+    <h2 class="section-title">À noter</h2>
+    <div id="notes-liste"></div>
+  </section>
+
+  <!-- Affiché si l'id de l'URL ne correspond à aucun voyage -->
+  <div class="erreur" id="erreur" hidden>
+    <strong>Road trip introuvable</strong>
+    <span id="erreur-detail"></span>
+  </div>
+
+</div>
+
+<!-- Fiches d'étape de la lightbox. Fancybox déplace l'élément voulu dans la
+     visionneuse puis le remet ici à la fermeture. -->
+<div id="fiches" hidden></div>
+
+
+<!-- ================= Gabarits de rendu ================= -->
+
+<template id="tpl-jour">
+  <details class="day" open>
+    <summary class="day-head">
+      <div class="day-title">
+        <span class="day-chevron"></span>
+        <span class="day-num" data-field="num"></span>
+        <span class="day-date" data-field="date"></span>
+        <span class="day-route">
+          <span data-field="debut"></span><span class="arrow">→</span><span data-field="fin"></span>
+        </span>
+      </div>
+      <div class="day-stats">
+        <span data-field="km"></span>
+        <span data-field="temps"></span>
+        <span data-field="dplus"></span>
+        <span data-field="nb"></span>
+      </div>
+    </summary>
+    <div class="day-body" data-field="body"></div>
+  </details>
+</template>
+
+<template id="tpl-etape">
+  <div class="row">
+    <div class="cell cell--etape etape">
+      <span data-field="debut"></span><span class="arrow">→</span><span data-field="fin"></span>
+    </div>
+    <div class="cell cell--carte" data-label="Carte">
+      <button type="button" class="vignette" data-field="vignette">
+        <img data-field="vignetteImg" alt="" loading="lazy" decoding="async">
+      </button>
+    </div>
+    <div class="cell num" data-label="Km"><span data-field="km"></span></div>
+    <div class="cell num" data-label="Temps estimé"><span data-field="temps"></span></div>
+    <div class="cell" data-label="Difficulté"><span class="badge" data-field="difficulte"></span></div>
+    <div class="cell num" data-label="Dénivelé"><span data-field="denivele"></span></div>
+    <div class="cell" data-label="Piste cyclable">
+      <span class="pct" data-field="cyclable"></span>
+      <div class="bar" data-field="bar"><div data-field="barFill"></div></div>
+      <div class="sub" data-field="cyclableDetail"></div>
+    </div>
+    <div class="cell cell--fiche">
+      <a class="lien" target="_blank" rel="noopener" data-field="url">Voir ↗</a>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-campings">
+  <div class="campings">
+    <span class="campings__label" data-field="label"></span>
+  </div>
+</template>
+
+<template id="tpl-camping">
+  <a class="camping" target="_blank" rel="noopener">
+    <span data-field="nom"></span><small data-field="detail"></small>
+  </a>
+</template>
+
+<template id="tpl-campings-vide">
+  <span class="campings__vide">Aucun camping repéré · à compléter</span>
+</template>
+
+<template id="tpl-note">
+  <p class="note-item"><strong data-field="etape"></strong> <span data-field="texte"></span></p>
+</template>
+
+<!-- Fiche d'une étape, affichée dans la lightbox -->
+<template id="tpl-fiche">
+  <div class="fiche">
+    <p class="fiche__jour">
+      <span data-field="jour"></span>
+      <span class="fiche__date" data-field="date"></span>
+    </p>
+    <h2 class="fiche__titre">
+      <span data-field="debut"></span><span class="arrow">→</span><span data-field="fin"></span>
+    </h2>
+    <p class="fiche__badge"><span class="badge" data-field="difficulte"></span></p>
+
+    <!-- captures de la carte de l'étape, alimentées par le champ `carte` -->
+    <div class="fiche__cartes" data-field="cartesBloc"></div>
+
+    <dl class="fiche__grille">
+      <div>
+        <dt>Distance</dt>
+        <dd class="fiche__chiffre" data-field="km"></dd>
+      </div>
+      <div>
+        <dt>Temps estimé</dt>
+        <dd class="fiche__chiffre" data-field="temps"></dd>
+      </div>
+      <div>
+        <dt>Dénivelé</dt>
+        <dd class="fiche__chiffre" data-field="denivele"></dd>
+      </div>
+      <div>
+        <dt>Piste cyclable</dt>
+        <dd>
+          <span class="pct" data-field="cyclable"></span>
+          <div class="bar" data-field="bar"><div data-field="barFill"></div></div>
+          <span class="sub" data-field="cyclableDetail"></span>
+        </dd>
+      </div>
+      <div class="fiche__large">
+        <dt>Pentes</dt>
+        <dd data-field="pentes"></dd>
+      </div>
+      <div class="fiche__large">
+        <dt>Revêtement</dt>
+        <dd data-field="revetement"></dd>
+      </div>
+    </dl>
+
+    <div class="fiche__bloc" data-field="noteBloc">
+      <span class="fiche__label">À noter</span>
+      <p data-field="note"></p>
+    </div>
+
+    <div class="fiche__bloc" data-field="campingsBloc">
+      <span class="fiche__label" data-field="campingsLabel"></span>
+      <div class="fiche__campings" data-field="campingsListe"></div>
+    </div>
+
+    <a class="fiche__lien" target="_blank" rel="noopener" data-field="url">
+      Ouvrir la fiche officielle ↗
+    </a>
+
+    <!-- data-carousel-go-prev / -go-next : Fancybox écoute ces attributs partout
+         dans sa visionneuse, y compris dans le contenu de la diapositive -->
+    <div class="fiche__nav">
+      <button type="button" class="fiche__nav-btn" data-carousel-go-prev>
+        ← <span data-field="navPrev"></span>
+      </button>
+      <button type="button" class="fiche__nav-btn" data-carousel-go-next>
+        <span data-field="navNext"></span> →
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-fiche-camping">
+  <a class="camping" target="_blank" rel="noopener">
+    <span data-field="nom"></span><small data-field="detail"></small>
+  </a>
+</template>
+
+<template id="tpl-fiche-carte">
+  <figure class="fiche__carte">
+    <img data-field="img" alt="" loading="lazy" decoding="async">
+  </figure>
+</template>
+
+
+<script src="data/roadtrips.js"></script>
+<script src="assets/vendor/fancybox.umd.js"></script>
+<script src="assets/roadtrip-utils.js"></script>
+<script src="assets/data-loader.js"></script>
+<script src="assets/roadtrip.js"></script>
+</body>
+</html>

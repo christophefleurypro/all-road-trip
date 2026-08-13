@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mes road trips à vélo</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <h1>🚴 Mes road trips</h1>
+  <p class="subtitle">Un voyage par ligne, classé par date de départ.</p>
+
+  <!-- Totaux tous voyages confondus -->
+  <div class="totals" id="totals" hidden>
+    <div class="tile">
+      <div class="label">Voyages</div>
+      <div class="value" data-field="voyages"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Jours de vélo</div>
+      <div class="value" data-field="jours"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Distance cumulée</div>
+      <div class="value"><span data-field="km"></span> <small>km</small></div>
+    </div>
+    <div class="tile">
+      <div class="label">Dénivelé + cumulé</div>
+      <div class="value"><span data-field="dplus"></span> <small>m</small></div>
+    </div>
+  </div>
+
+  <section id="section-a-venir" hidden>
+    <h2 class="section-title">À venir</h2>
+    <div class="trip-list" id="liste-a-venir"></div>
+  </section>
+
+  <section id="section-passes" hidden>
+    <h2 class="section-title">Déjà roulés</h2>
+    <div class="trip-list" id="liste-passes"></div>
+  </section>
+
+  <p class="empty" id="vide" hidden>
+    Aucun road trip pour l'instant — ajoute une entrée dans <code>data/roadtrips.js</code>.
+  </p>
+
+  <!-- Affiché si un fichier listé dans le manifeste n'a pas pu être chargé -->
+  <p class="avertissement" id="avertissement" hidden></p>
+
+</div>
+
+
+<!-- ================= Gabarit de rendu ================= -->
+
+<template id="tpl-trip">
+  <a class="trip">
+    <span class="trip-date">
+      <span class="trip-date__jour" data-field="dateJour"></span>
+      <span class="trip-date__mois" data-field="dateMois"></span>
+      <span class="trip-date__annee" data-field="dateAnnee"></span>
+    </span>
+    <span class="trip-main">
+      <span class="trip-titre" data-field="titre"></span>
+      <span class="trip-itineraire" data-field="itineraire"></span>
+    </span>
+    <span class="trip-stats">
+      <span data-field="periode"></span>
+      <span data-field="jours"></span>
+      <span data-field="km"></span>
+      <span data-field="dplus"></span>
+    </span>
+    <span class="trip-go">Voir ↗</span>
+  </a>
+</template>
+
+
+<script src="data/roadtrips.js"></script>
+<script src="assets/roadtrip-utils.js"></script>
+<script src="assets/data-loader.js"></script>
+<script src="assets/index.js"></script>
+</body>
+</html>

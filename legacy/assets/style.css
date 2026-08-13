@@ -1,0 +1,397 @@
+/* ------------------------------------------------------------------
+   Styles partagés : index.html (listing) + roadtrip.html (détail)
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg: #f6f4ef;
+  --card: #ffffff;
+  --ink: #26241f;
+  --muted: #6f6a5e;
+  --line: #e5e1d8;
+  --accent: #2e6e4e;
+  --accent-soft: #e3efe8;
+  --amber: #b0762a;
+  --amber-soft: #f5ead9;
+}
+* { box-sizing: border-box; }
+/* les règles `display` ci-dessous priment sur la feuille du navigateur :
+   il faut réaffirmer [hidden], utilisé pour masquer les blocs non remplis */
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  padding: 32px 24px 48px;
+}
+.wrap { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+.subtitle { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+.arrow { color: var(--muted); font-weight: 400; padding: 0 4px; }
+
+/* ---- Fil d'Ariane ---- */
+.back {
+  display: inline-block; margin-bottom: 14px;
+  color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.back:hover { text-decoration: underline; }
+
+/* ---- Tuiles de totaux ---- */
+.totals { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.tile {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 18px; min-width: 130px;
+}
+.tile .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.tile .value { font-size: 22px; font-weight: 650; margin-top: 2px; }
+.tile .value small { font-size: 13px; font-weight: 500; color: var(--muted); }
+
+/* ==================================================================
+   index.html — listing des road trips
+   ================================================================== */
+
+.section-title {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); font-weight: 700; margin: 26px 0 10px;
+}
+.trip-list { display: grid; gap: 12px; }
+.trip {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center; gap: 8px 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 18px; text-decoration: none; color: var(--ink);
+}
+.trip:hover { border-color: var(--accent); }
+.trip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.trip-date {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 60px; min-height: 60px; padding: 6px 10px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); line-height: 1.15;
+}
+.trip-date__jour { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.trip-date__mois { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+.trip-date__annee { font-size: 11px; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.trip--passe .trip-date { background: #efece5; color: var(--muted); }
+.trip-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trip-titre { font-weight: 650; font-size: 16px; overflow-wrap: anywhere; }
+.trip-itineraire { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.trip-stats {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.trip-stats span { white-space: nowrap; }
+.trip-go { color: var(--accent); font-weight: 600; white-space: nowrap; font-size: 14px; }
+.empty {
+  background: var(--card); border: 1px dashed var(--line); border-radius: 14px;
+  padding: 28px 18px; text-align: center; color: var(--muted); font-size: 14px;
+}
+.avertissement {
+  background: var(--amber-soft); border: 1px solid #e6d3b4; border-radius: 12px;
+  padding: 12px 16px; margin-top: 18px; color: var(--amber); font-size: 13px;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em; background: #eeebe3; padding: 1px 5px; border-radius: 5px;
+}
+
+/* ==================================================================
+   roadtrip.html — détail d'un voyage
+   ================================================================== */
+
+/* ---- Grille (ex-tableau) ---- */
+.table-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  /* `clip` et non `auto` : `auto` ferait de .table-card un conteneur de défilement
+     sur les deux axes, ce qui neutralise le `position: sticky` de .row--head.
+     `clip` rogne les coins arrondis sans créer de scrollport. */
+  overflow-x: clip; font-size: 14px;
+}
+/* Pentes et revêtement ne sont pas dans le tableau : ils restent dans la fiche
+   qui s'ouvre au clic, où il y a la place de les lire. */
+.row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.8fr)  /* étape */
+    92px                  /* carte */
+    76px                  /* km */
+    92px                  /* temps */
+    130px                 /* difficulté */
+    120px                 /* dénivelé */
+    minmax(160px, 1.4fr)  /* piste cyclable */
+    70px;                 /* fiche */
+}
+.cell {
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+  min-width: 0; overflow-wrap: break-word;
+}
+.cell > * { max-width: 100%; }
+.row--head { position: sticky; top: 0; z-index: 1; }
+.row--head .cell {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); font-weight: 600; background: #faf9f6; line-height: 1.3;
+}
+.row--head .cell:first-child { border-top-left-radius: 14px; }
+.row--head .cell:last-child { border-top-right-radius: 14px; }
+.cell.num { font-variant-numeric: tabular-nums; }
+.cell::before { display: none; }
+.etape { font-weight: 650; overflow-wrap: anywhere; }
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent); line-height: 1.35;
+}
+.badge.moyen { background: var(--amber-soft); color: var(--amber); }
+.badge.difficile { background: #f6e0dc; color: #a03d2d; }
+.bar {
+  height: 6px; border-radius: 999px; background: var(--line); width: 90px; margin-top: 5px; overflow: hidden;
+}
+.bar > div { height: 100%; background: var(--accent); border-radius: 999px; }
+/* Vignette de carte dans le tableau : elle ouvre la fiche de l'étape */
+.cell--carte { padding: 8px 10px; }
+.vignette {
+  display: block; width: 72px; height: 72px; padding: 0; line-height: 0;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+  overflow: hidden; cursor: pointer;
+}
+.vignette:hover { border-color: var(--accent); }
+.vignette:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vignette img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pct { font-weight: 650; }
+.pct--nc { color: var(--muted); }
+.sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+a.lien { color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+/* le lien remplit toute la cellule : cible tactile confortable */
+.cell--fiche { padding: 0; display: flex; }
+.cell--fiche .lien {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 12px 8px;
+}
+.cell--fiche .lien:hover { background: var(--accent-soft); }
+
+/* ---- Journée (accordéon) ---- */
+.day-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 6px 16px; padding: 12px 14px;
+  background: var(--accent-soft); border-bottom: 1px solid var(--line);
+  cursor: pointer; list-style: none; user-select: none;
+}
+.day-head::-webkit-details-marker { display: none; }
+.day-head:hover { background: #d7e8de; }
+.day-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.day-chevron {
+  width: 0; height: 0; align-self: center; flex: none;
+  border-left: 6px solid var(--accent);
+  border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+  transition: transform 0.18s ease;
+}
+.day[open] > .day-head .day-chevron { transform: rotate(90deg); }
+.day-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; min-width: 0; }
+.day-num {
+  font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.day-date { font-size: 12.5px; color: var(--muted); }
+.day-route { font-weight: 600; overflow-wrap: anywhere; }
+.day-stats {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.day-stats span { white-space: nowrap; }
+/* pas de trait en bas de la dernière journée : il doublerait la bordure de .table-card,
+   que l'accordéon soit ouvert (dernier bloc du day-body) ou replié (le day-head) */
+.day:last-child .day-body > *:last-child,
+.day:last-child .day-body > *:last-child .cell,
+.day:last-child:not([open]) > .day-head { border-bottom: none; }
+
+/* ---- Campings de la journée ---- */
+.campings {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 10px 14px; background: #faf9f6; border-bottom: 1px solid var(--line);
+}
+.campings__label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); font-weight: 600; margin-right: 2px;
+}
+.camping {
+  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+  min-height: 44px; padding: 7px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 600;
+}
+.camping:hover { border-color: var(--accent); color: var(--accent); }
+.camping small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.campings__vide { font-size: 12.5px; color: var(--muted); }
+
+/* ---- Notes ---- */
+.notes { margin-top: 22px; }
+.notes .section-title { margin-top: 0; }
+.note-item {
+  margin: 0 0 6px; color: var(--muted); font-size: 12.5px; line-height: 1.5;
+}
+.note-item strong { color: var(--ink); font-weight: 650; }
+
+/* ---- Fiche d'étape en lightbox ---- */
+
+.fb-etapes { --f-button-bg: rgba(255,255,255,0.9); --f-button-hover-bg: #fff; }
+.fb-etapes .fancybox__content {
+  padding: 0; background: transparent; box-shadow: none; color: var(--ink);
+}
+.fb-etapes .f-caption { font-size: 13px; }
+
+.fiche {
+  width: min(660px, 92vw);
+  background: var(--card); border-radius: 16px;
+  padding: 26px 28px 22px; font-size: 14px; line-height: 1.5;
+  text-align: left;
+}
+.fiche__jour {
+  margin: 0 0 2px; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);
+}
+.fiche__date { color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
+.fiche__date::before { content: "· "; }
+.fiche__titre {
+  margin: 0 0 10px; font-size: 21px; letter-spacing: -0.01em; overflow-wrap: anywhere;
+}
+.fiche__badge { margin: 0 0 18px; }
+
+/* Captures de la carte de l'étape.
+   Les captures sont carrées : une largeur pleine (660 px) donnerait 660 px de
+   haut et repousserait tout le reste hors de l'écran. On plafonne donc la
+   hauteur et on centre — ce qui laisse aussi bien passer une capture large. */
+.fiche__cartes { display: grid; gap: 10px; margin: 0 0 18px; justify-items: center; }
+.fiche__carte { margin: 0; width: 100%; }
+.fiche__carte img {
+  display: block; margin: 0 auto;
+  max-width: 100%; max-height: 46vh; width: auto; height: auto;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
+}
+
+.fiche__grille {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px;
+  margin: 0 0 18px; padding: 16px 0 0; border-top: 1px solid var(--line);
+}
+.fiche__grille > div { min-width: 0; }
+.fiche__large { grid-column: 1 / -1; }
+.fiche__grille dt {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); font-weight: 600; margin-bottom: 3px;
+}
+.fiche__grille dd { margin: 0; overflow-wrap: break-word; }
+.fiche__chiffre { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.fiche__grille .bar { width: 100%; max-width: 160px; }
+.fiche__grille .sub { display: block; }
+
+.fiche__bloc {
+  padding: 14px 0 0; border-top: 1px solid var(--line); margin-bottom: 16px;
+}
+.fiche__bloc p { margin: 0; color: var(--muted); font-size: 13px; }
+.fiche__label {
+  display: block; margin-bottom: 7px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); font-weight: 600;
+}
+.fiche__campings { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.fiche__lien {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 46px; padding: 12px 18px;
+  background: var(--accent); color: #fff; border-radius: 10px;
+  font-weight: 650; text-decoration: none;
+}
+.fiche__lien:hover { background: #255c40; }
+
+.fiche__nav {
+  display: flex; gap: 10px; margin-top: 10px;
+}
+.fiche__nav:empty { display: none; }
+.fiche__nav-btn {
+  flex: 1; min-height: 44px; padding: 10px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 600;
+  text-align: center; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fiche__nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.fiche__nav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* un seul bouton (première ou dernière étape) : il ne prend pas toute la largeur */
+.fiche__nav-btn:only-child { flex: 0 1 auto; margin-left: auto; }
+.fiche__nav-btn[data-carousel-go-prev]:only-child { margin-left: 0; margin-right: auto; }
+
+@media (max-width: 700px) {
+  /* les flèches flottantes de Fancybox recouvriraient le texte de la fiche :
+     sous cette largeur, la navigation passe par les boutons de la fiche et le balayage */
+  .fb-etapes .f-button.is-arrow { display: none; }
+}
+
+@media (max-width: 520px) {
+  .fiche { padding: 22px 18px 18px; font-size: 13.5px; }
+  .fiche__titre { font-size: 18px; }
+  .fiche__grille { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ---- Erreur (id inconnu) ---- */
+.erreur {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px 22px; color: var(--muted); font-size: 14px; line-height: 1.6;
+}
+.erreur strong { color: var(--ink); display: block; margin-bottom: 4px; font-size: 16px; }
+
+/* ==================================================================
+   Responsive
+   ================================================================== */
+
+/* Sous 1200px : le tableau devient des cartes */
+@media (max-width: 1199px) {
+  .table-card {
+    background: none; border: none; border-radius: 0; overflow: visible;
+    display: grid; gap: 12px;
+  }
+  .row--head { display: none; }
+  .row {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    overflow: hidden;
+  }
+  .cell { border-bottom: none; }
+  .cell::before {
+    content: attr(data-label);
+    display: block; margin-bottom: 4px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); font-weight: 600;
+  }
+  .cell--etape {
+    grid-column: 1 / -1;
+    background: #faf9f6; border-bottom: 1px solid var(--line);
+    font-size: 16px; white-space: normal;
+  }
+  .cell--etape::before { display: none; }
+  .cell--fiche { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+  .cell--fiche::before { display: none; }
+  .cell--fiche .lien { min-height: 52px; background: var(--accent-soft); }
+  .day { display: block; }
+  .day-head { border: 1px solid var(--line); border-radius: 12px; font-size: 15px; }
+  .day-body { display: grid; gap: 12px; padding-top: 12px; }
+  .campings { border: 1px solid var(--line); border-radius: 14px; }
+  .day:last-child .day-body > *:last-child { border-bottom: 1px solid var(--line); }
+}
+
+/* Listing : la carte de voyage se replie */
+@media (max-width: 799px) {
+  .trip {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start; row-gap: 12px;
+  }
+  .trip-stats { grid-column: 1 / -1; }
+  .trip-go { grid-column: 1 / -1; }
+}
+
+@media (max-width: 520px) {
+  body { padding: 24px 14px 40px; }
+  .totals { display: grid; grid-template-columns: 1fr 1fr; }
+  .tile { min-width: 0; }
+  .row { grid-template-columns: 1fr; }
+  /* :not(.cell--fiche) — sinon on réintroduit un padding dans la cellule du lien,
+     qui doit rester pleine largeur pour servir de cible tactile */
+  .cell:not(.cell--fiche) { padding: 10px 14px; }
+}
