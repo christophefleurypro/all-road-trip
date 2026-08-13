@@ -66,10 +66,16 @@ jobs:
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
             deploy
 
-      # -f : un retour non-2xx du webhook (jeton refusé, git en échec) fait
-      # échouer le run, pour que le problème soit visible dans l'onglet Actions
+      # DIAGNOSTIC TEMPORAIRE — le webhook renvoie 520 depuis les runners ;
+      # on localise le blocage (Cloudflare ou origine o2switch) puis on
+      # restaurera l'appel réel.
       - name: Prévenir le serveur (déclenche son git pull)
         run: |
-          curl -fsS --retry 3 --retry-delay 5 \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}" \
-            https://christophefleury.fr/deploy-roadtrip.php
+          t() { printf "%-52s" "$1"; shift; curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "$@" || echo "ECHEC RESEAU"; }
+          t "1. / via Cloudflare"            https://christophefleury.fr/
+          t "2. /roadtrip/ via Cloudflare"   https://christophefleury.fr/roadtrip/
+          t "3. webhook sans jeton via CF"   https://christophefleury.fr/deploy-roadtrip.php
+          t "4. / direct origine"            --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/
+          t "5. webhook sans jeton origine"  --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/deploy-roadtrip.php
+          echo "== certificat servi par l'origine =="
+          curl -sv --max-time 20 --resolve christophefleury.fr:443:109.234.166.207 https://christophefleury.fr/ -o /dev/null 2>&1 | grep -iE "subject:|issuer:|SSL certificate" || true
