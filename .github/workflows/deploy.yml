@@ -1,24 +1,24 @@
-# Déploiement automatique, en deux temps :
+# Déploiement automatique :
 #
 #   push sur main
-#     1. GitHub Actions construit le site (vite build) et pousse le contenu
-#        de dist/ — prêt à servir — sur la branche `deploy`
-#     2. puis se connecte au serveur en SSH et met à jour le clone
-#        (git fetch + reset, l'équivalent sûr d'un git pull sur une
-#        branche réécrite à chaque build)
+#     → GitHub Actions construit le site (vite build) et pousse le contenu
+#       de dist/ — prêt à servir — sur la branche `deploy`
+#     → sur le serveur (o2switch), un cron tire la branche toutes les
+#       2 minutes : ~/bin/deploy-roadtrip.sh fait git fetch + reset --hard
+#       s'il y a du nouveau. Le site est donc à jour au plus 2 min après
+#       la fin du build.
+#
+# Pourquoi un cron côté serveur plutôt qu'un SSH depuis Actions : le
+# pare-feu o2switch bloque le SSH venant des IP non françaises, dont les
+# runners GitHub (connection timed out systématique).
 #
 # Le serveur n'a besoin que de git : ni Node, ni npm, ni build sur place.
+# Aucun secret n'est nécessaire.
 #
-# Secrets à créer sur GitHub (Settings → Secrets and variables → Actions) :
-#   SSH_HOST      hôte du serveur, ex. serveur.mon-hebergeur.fr
-#   SSH_USER      utilisateur SSH
-#   SSH_KEY       clé privée SSH (OpenSSH, la paire dédiée à ce déploiement)
-#   SSH_PORT     (facultatif) port SSH si différent de 22
-#   DEPLOY_PATH   chemin du clone sur le serveur, ex. /home/user/www
-#
-# Mise en place côté serveur (une seule fois) — voir aussi le récap en bas :
+# Mise en place côté serveur (une seule fois, déjà faite) :
 #   git clone --branch deploy --single-branch \
-#     https://github.com/christophefleurypro/all-road-trip.git <DEPLOY_PATH>
+#     https://github.com/christophefleurypro/all-road-trip.git ~/christophefleury.fr/roadtrip
+#   + le script ~/bin/deploy-roadtrip.sh appelé par la crontab (*/2)
 
 name: Build & déploiement
 
@@ -66,18 +66,3 @@ jobs:
           git push --force \
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
             deploy
-
-      # fetch + reset --hard et non `git pull` : la branche étant réécrite
-      # (force push), un pull tenterait une fusion et échouerait.
-      - name: Mettre à jour le serveur (git pull du clone)
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=accept-new \
-              -p "${{ secrets.SSH_PORT || '22' }}" \
-              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-              "cd '${{ secrets.DEPLOY_PATH }}' && git fetch origin deploy && git reset --hard origin/deploy"
